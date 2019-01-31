@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+        http://www.springframework.org/schema/util
+        http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+	<!-- 1.配置管理SqlSessionFactoryBean   SQLSession的作用：底层封装JDBC，并且实现ORM -->
+	<bean class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="DataSource" ref="dataSource"/>
+		<property name="ConfigLocation" value="classpath:/mybatis/mybatis-config.xml"/>
+		<property name="MapperLocations" value="classpath:/mybatis/mappers/*Mapper.xml"/>
+		<property name="TypeAliasesPackage" value="com.jt.common.po"/>
+	</bean>
+	<!-- 2.管理Mapper接口为其创建代理对象 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="BasePackage" value="com.jt.manage.mapper"/>
+	</bean>
+</beans>
