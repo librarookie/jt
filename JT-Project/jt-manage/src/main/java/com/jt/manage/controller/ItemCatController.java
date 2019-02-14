@@ -24,7 +24,7 @@ public class ItemCatController {
 	@ResponseBody
 	public List<EasyUI_Tree> findTree(
 	@RequestParam(value="id",defaultValue="0")Long parentId) {
-		return itemCatService.findTree(parentId);
+		return itemCatService.findTreeCache(parentId);
 	}
 
 }
