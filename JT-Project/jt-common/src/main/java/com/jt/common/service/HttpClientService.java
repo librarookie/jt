@@ -1,17 +1,11 @@
 package com.jt.common.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -19,6 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class HttpClientService {
@@ -32,179 +31,143 @@ public class HttpClientService {
     private RequestConfig requestConfig;
 
     /**
-     * 执行get请求
-     * 
-     * @param url
-     * @return
-     * @throws Exception
-     */
-    public String doGet(String url,Map<String, String> params,String encode) throws Exception {
-        LOGGER.info("执行GET请求，URL = {}", url);
-        if(null != params){
-            URIBuilder builder = new URIBuilder(url);
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                builder.setParameter(entry.getKey(), entry.getValue());
-            }
-            url = builder.build().toString();
+     * 	目的:简化业务层操作
+     *         参数问题:
+     *     url:http://www.jd.com/addUser?id=1&name=tom
+     *     1.url 2.Map<String,String> 3.字符集编码
+     *         用户参数问题:
+     *     url:www.jd.com/addUser
+     *     map<k,v>  id=1,name=tom
+     *
+     *  拼串传统写法:
+     *  /*if(params != null) {
+     //url://www.jt.com/addUser?id=1&name=tom&
+     String tempUrl = url + "?";
+     for (Map.Entry<String,String> entry
+     : params.entrySet()) {
+     String key = entry.getKey();
+     String value = entry.getValue();
+     //www.jt.com/addUser?id=1&name=tom&
+     tempUrl = tempUrl+key+"="+value+"&";
+     }
+
+     //www.jt.com/addUser?id=1&name=tom
+     url = tempUrl.substring(0, tempUrl.length()-1);
+     }*/
+
+    public String doGet(String url,Map<String,String> params,String encode) {
+        String result = null;	//代表返回结果
+        //1.判断用户字符集编码格式是否为null
+        if(StringUtils.isEmpty(encode)) {
+
+            encode = "UTF-8";
         }
-        // 创建http GET请求
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.setConfig(requestConfig);
-        CloseableHttpResponse response = null;
         try {
-            // 执行请求
-            response = httpClient.execute(httpGet);
-            // 判断返回状态是否为200
-            if (response.getStatusLine().getStatusCode() == 200) {
-                if(encode == null){
-                    encode = "UTF-8";
+            //2.判断参数是否为null
+            if(params != null) {
+                //2.1定义工具类
+                URIBuilder builder = new URIBuilder(url);
+                for (Map.Entry<String,String> entry:params.entrySet()) {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+                    builder.addParameter(key,value);
                 }
-                return EntityUtils.toString(response.getEntity(), encode);
+                url = builder.build().toString();
             }
-        } finally {
-            if (response != null) {
-                response.close();
+
+            //3.定义请求类型
+            HttpGet httpGet = new HttpGet(url);
+            //3.1定义请求的超时时间
+            httpGet.setConfig(requestConfig);
+
+            //4.发起请求,获取响应
+            CloseableHttpResponse response =
+                    httpClient.execute(httpGet);
+
+            //5.判断操作是否正确
+            if(response.getStatusLine().getStatusCode() == 200) {
+
+                result = EntityUtils.toString(response.getEntity(),encode);
             }
-            // 此处不能关闭httpClient，如果关闭httpClient，连接池也会销毁
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return result;
     }
-    
-    public String doGet(String url, String encode) throws Exception{
-        return this.doGet(url, null, encode);
+
+    //为了用户体验重载方法
+    public String doGet(String url,
+                        Map<String,String> params){
+
+        return doGet(url, params, null);
     }
-    
-    public String doGet(String url) throws Exception{
-        return this.doGet(url, null, null);
+
+    public String doGet(String url){
+
+        return doGet(url, null, null);
     }
 
     /**
-     * 带参数的get请求
-     * 
+     * 1.定义请求方式httpPost
+     * 2.将参数进行表单实体封装.
+     * 3.发起url请求,获取返回值
      * @param url
      * @param params
+     * @param charset
      * @return
-     * @throws Exception
      */
-    public String doGet(String url, Map<String, String> params) throws Exception {
-        return this.doGet(url, params, null);
-    }
+    public String doPost(String url,Map<String,String> params,String charset){
+        String result = null;
+        if(StringUtils.isEmpty(charset)){
 
-    /**
-     * 执行POST请求
-     * 
-     * @param url
-     * @param params
-     * @return
-     * @throws Exception
-     */
-    public String doPost(String url, Map<String, String> params,String encode) throws Exception {
-        // 创建http POST请求
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setConfig(requestConfig);
-
-        if (null != params) {
-            // 设置2个post参数，一个是scope、一个是q
-            List<NameValuePair> parameters = new ArrayList<NameValuePair>(0);
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-            }
-
-            // 构造一个form表单式的实体
-            UrlEncodedFormEntity formEntity = null;
-            if(encode!=null){
-                formEntity = new UrlEncodedFormEntity(parameters,encode);
-            }else{
-                formEntity = new UrlEncodedFormEntity(parameters);
-            }
-            // 将请求实体设置到httpPost对象中
-            httpPost.setEntity(formEntity);
+            charset = "UTF-8";
         }
 
-        CloseableHttpResponse response = null;
+        //1.定义请求类型
+        HttpPost post = new HttpPost(url);
+        post.setConfig(requestConfig); //定义链接时长
+
         try {
-            // 执行请求
-            response = httpClient.execute(httpPost);
-            // 判断返回状态是否为200
-            if (response.getStatusLine().getStatusCode() == 200) {
-                return EntityUtils.toString(response.getEntity(), "UTF-8");
+            //2.参数封装
+            if(params != null){
+                List<BasicNameValuePair> parameters = new ArrayList<>();
+                //动态获取用户数据
+                for (Map.Entry<String,String> entry : params.entrySet()) {
+                    parameters.add(
+                            new BasicNameValuePair(entry.getKey(),entry.getValue()));
+                }
+                //封装FORM表单实体对象,作用传递参数
+                UrlEncodedFormEntity entity =
+                        new UrlEncodedFormEntity(parameters,charset);
+                post.setEntity(entity);
             }
-        } finally {
-            if (response != null) {
-                response.close();
+
+            //3.发起url请求.
+            CloseableHttpResponse httpResponse =
+                    httpClient.execute(post);
+            //504 访问超时 500 服务器异常 406 浏览器解析参数异常  404 请求没有对应的处理方式
+            //400 参数提交到后台参数类型错误. 200 请求正常  304 浏览器已缓存
+            if(httpResponse.getStatusLine().getStatusCode() == 200){
+                result  =
+                        EntityUtils.toString(httpResponse.getEntity(),charset);
+
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return result;
     }
 
+    public String doPost(String url,Map<String,String> params){
 
-    /**
-     * 执行POST请求
-     * 
-     * @param url
-     * @param params
-     * @return
-     * @throws Exception
-     */
-    public String doPost(String url, Map<String, String> params) throws Exception {
-        // 创建http POST请求
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setConfig(requestConfig);
-
-        if (null != params) {
-            // 设置2个post参数，一个是scope、一个是q
-            List<NameValuePair> parameters = new ArrayList<NameValuePair>(0);
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-            }
-
-            // 构造一个form表单式的实体
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters);
-            // 将请求实体设置到httpPost对象中
-            httpPost.setEntity(formEntity);
-        }
-
-        CloseableHttpResponse response = null;
-        try {
-            // 执行请求
-            response = httpClient.execute(httpPost);
-            // 判断返回状态是否为200
-            if (response.getStatusLine().getStatusCode() == 200) {
-                return EntityUtils.toString(response.getEntity(), "UTF-8");
-            }
-        } finally {
-            if (response != null) {
-                response.close();
-            }
-        }
-        return null;
+        return doPost(url, params, null);
     }
 
-    public String doPostJson(String url, String json) throws Exception {
-        // 创建http POST请求
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setConfig(requestConfig);
-        
-        if(null != json){
-            //设置请求体为 字符串
-            StringEntity stringEntity = new StringEntity(json,"UTF-8");
-            httpPost.setEntity(stringEntity);
-        }
+    public String doPost(String url){
 
-        CloseableHttpResponse response = null;
-        try {
-            // 执行请求
-            response = httpClient.execute(httpPost);
-            // 判断返回状态是否为200
-            if (response.getStatusLine().getStatusCode() == 200) {
-                return EntityUtils.toString(response.getEntity(), "UTF-8");
-            }
-        } finally {
-            if (response != null) {
-                response.close();
-            }
-        }
-        return null;
+        return doPost(url, null, null);
     }
-
 }

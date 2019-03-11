@@ -1,5 +1,7 @@
 package com.jt.common.po;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -10,6 +12,8 @@ import javax.persistence.Table;
  * @date 2019/1/25 - 15:35
  */
 @Table(name="tb_item")
+// 进行json转化时, 忽略未知属性
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Item extends BasePojo {
 
 	@Id		//定义注解, 主键自增
@@ -23,6 +27,15 @@ public class Item extends BasePojo {
     private String image;       // 图片信息 1.jpg,2.jpg...
     private Long cid;        	// 商品分类
     private Integer status;     // 1.正常，2.下架，3.删除
+
+    /**
+     * 由于前天需要通过get方法获取第一张图片信息
+     * 手动的添加一个get方法
+     * @return
+     */
+    public String[] getImages() {
+        return image.split(",");
+    }
 
     public Long getId() {
         return id;
