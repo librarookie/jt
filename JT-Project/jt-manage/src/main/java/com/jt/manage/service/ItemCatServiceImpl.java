@@ -7,7 +7,7 @@ import com.jt.manage.vo.EasyUI_Tree;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import redis.clients.jedis.ShardedJedis;
+import redis.clients.jedis.JedisCluster;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,11 +18,13 @@ public class ItemCatServiceImpl implements ItemCatService {
 	@Autowired
 	private ItemCatMapper itemCatMapper;
 	@Autowired
-	//private Jedis jedis;
-	private ShardedJedis jedis;
+	private JedisCluster jedisCluster;
+	//private RedisService redisService;		// 通过工具类,实现获取redis
+	//private ShardedJedis shardedJedis;	// 注入切片
+	//private Jedis jedis;		// 注入单台redis
 	@Autowired
 	private  ObjectMapper objectMapper;
-	
+
 	public List<ItemCat> findItemCatByParentId(Long parentId) {
 		ItemCat record = new ItemCat();
 		record.setParentId(parentId);
@@ -54,13 +56,13 @@ public class ItemCatServiceImpl implements ItemCatService {
 	@Override
 	public List<EasyUI_Tree> findTreeCache(Long parentId) {
 		String key = "ITEM_CAT_" + parentId;
-		String json = jedis.get(key);
+		String json = jedisCluster.get(key);
 		List<EasyUI_Tree> trees = new ArrayList<>();
 		try {
 			if (StringUtils.isEmpty(json)) {
 				trees = findTree(parentId);
 				String listJSON = objectMapper.writeValueAsString(trees);
-				jedis.set(key, listJSON);
+				jedisCluster.set(key, listJSON);
 				System.out.println("访问数据库 ~");
 			} else {
 				trees = objectMapper.readValue(json, trees.getClass());

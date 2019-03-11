@@ -1,4 +1,4 @@
-package com.jt;
+package com.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jt.manage.pojo.User;

@@ -21,14 +21,14 @@
 	<!-- 定义对象与JSON转化工具类 -->
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
 
-	<!-- 1.spring整合单台redis -->
+	<!--&lt;!&ndash; 1.spring整合单台redis &ndash;&gt;
 	<bean id="jedis" class="redis.clients.jedis.Jedis">
 		<constructor-arg name="host" value="${redis.host}"/>
 		<constructor-arg name="port" value="${redis.port}"/>
 	</bean>
 
 
-	<!-- 2.spring整合redis分片 -->
+	&lt;!&ndash; 2.spring整合redis分片 &ndash;&gt;
 	<bean id="shard" class="redis.clients.jedis.JedisShardInfo">
 		<constructor-arg name="host" value="${redis.host}"/>
 		<constructor-arg name="port" value="${redis.port}"/>
@@ -50,4 +50,18 @@
 			</list>
 		</constructor-arg>
 	</bean>
+
+	&lt;!&ndash; 配置 redis 哨兵 &ndash;&gt;
+	<bean class="redis.clients.jedis.JedisSentinelPool">
+		<constructor-arg name="masterName" value="${redis.masterName}"/>
+		<constructor-arg name="sentinels">
+			<set>
+				<value>${redis.sentinel}</value>
+			</set>
+		</constructor-arg>
+	</bean>-->
+
+	<!--引入spring工厂, 创建JedisCluster-->
+	<bean id="jedisCluster" class="com.jt.common.factory.JedisClusterFactory"/>
+
 </beans>

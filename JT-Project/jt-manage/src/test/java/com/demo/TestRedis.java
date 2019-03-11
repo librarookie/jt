@@ -1,13 +1,12 @@
-package com.jt;
+package com.demo;
 
 import org.junit.Test;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisShardInfo;
-import redis.clients.jedis.ShardedJedis;
-import redis.clients.jedis.Transaction;
+import redis.clients.jedis.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author chao
@@ -79,5 +78,36 @@ public class TestRedis {
         ShardedJedis shardedJedis = new ShardedJedis(shards);
         shardedJedis.set("shards", "完成分片操作 ~");
         System.out.println("获取数据 : "+shardedJedis.get("shards"));
+    }
+
+    @Test   // 实现哨兵的操作, masterName: 获取主机变量的名称(固定变量)
+    public void testSentinel() {
+        Set<String> sentinels = new HashSet<>();
+        sentinels.add("192.168.220.142:26379");
+        // sentinels.add(new HostAndPort(host, port));
+        JedisSentinelPool pool =
+                new JedisSentinelPool("mymaster", sentinels);
+        // 获取redis连接
+        Jedis jedis = pool.getResource();
+        jedis.set("dog", "番茄");
+        System.out.printf("%6s", jedis.get("dog"));
+        jedis.close();  // 关闭连接
+    }
+    @Test   // 操作集群cluster
+    public void testCluster() {
+        String host = "192.168.220.142";
+        Set<HostAndPort> nodes = new HashSet<>();
+        nodes.add(new HostAndPort(host, 7000));
+        nodes.add(new HostAndPort(host, 7001));
+        nodes.add(new HostAndPort(host, 7002));
+        nodes.add(new HostAndPort(host, 7003));
+        nodes.add(new HostAndPort(host, 7004));
+        nodes.add(new HostAndPort(host, 7005));
+        nodes.add(new HostAndPort(host, 7006));
+        nodes.add(new HostAndPort(host, 7007));
+        nodes.add(new HostAndPort(host, 7008));
+        JedisCluster jedisCluster = new JedisCluster(nodes);
+        jedisCluster.set("name", "伍六七");
+        System.out.println(jedisCluster.get("name"));
     }
 }

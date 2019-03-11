@@ -18,7 +18,8 @@ public class ItemController {
 
 	@Autowired
 	private ItemService itemService;
-	
+
+	//"http://manage.jt.com/web/item/findItemById"
 	@RequestMapping("/query/item/desc/{itemId}")
 	@ResponseBody
 	public SysResult findItemDescById(@PathVariable Long itemId) {
@@ -37,7 +38,7 @@ public class ItemController {
 		return itemService.findItemByPage(page, rows);
 	}
 	/**
-	 * spring4 及以下
+	 * spring4 及以
 	 * @param itemId
 	 * @return
 	 */
